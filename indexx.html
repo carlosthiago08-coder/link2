@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CUSTOMER DIGITAL | Dashboard Real-Time</title>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
@@ -149,6 +149,10 @@
         window.onload = carregarDados;
 
         function carregarDados() {
+            if (typeof Papa === "undefined") {
+                console.error("PapaParse não carregou!");
+                return;
+            }
             Papa.parse(SHEET_URL, {
                 download: true, header: true, skipEmptyLines: true,
                 complete: (results) => {
@@ -171,6 +175,7 @@
         function extrairCidade(texto) {
             if (!texto) return "-";
             const partes = texto.split(',');
+            // Pega o último elemento após a vírgula (geralmente a cidade no seu padrão de dados)
             return partes.length > 1 ? partes[partes.length - 1].replace(/"/g, '').trim() : texto;
         }
 
@@ -210,7 +215,7 @@
                         onClick: (e, el) => { if (el.length > 0) showDrill(labels[el[0].index], key); },
                         plugins: { 
                             legend: { labels: { color: '#94A3B8' } },
-                            datalabels: { color: '#fff', font: { size: 10, weight: 'bold' }, formatter: v => v > 0 ? Math.round(v) : '' }
+                            datalabels: { color: '#fff', font: { size: 10, weight: 'bold' }, formatter: v => v > 0 ? Math.round(v).toLocaleString() : '' }
                         },
                         scales: {
                             y: { ticks: { color: '#94A3B8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
@@ -256,10 +261,11 @@
         }
 
         function enviarEmail() {
-            window.location.href = `mailto:?subject=Dashboard Atualizado&body=Confira o relatório em: ${window.location.href}`;
+            window.location.href = `mailto:?subject=Dashboard Atualizado&body=Acesse: ${window.location.href}`;
         }
     </script>
 </body>
 </html>
+
 
 
