@@ -29,6 +29,7 @@
             color: var(--text-light);
         }
 
+        /* Cabeçalho Original */
         header {
             display: flex;
             justify-content: space-between;
@@ -55,6 +56,7 @@
             gap: 8px;
             transition: 0.3s;
             font-size: 14px;
+            text-decoration: none;
         }
 
         .btn-upload { background: var(--secondary); color: #000; }
@@ -62,6 +64,7 @@
         .btn-email { background: #F59E0B; color: #000; }
         .btn:hover { transform: translateY(-2px); filter: brightness(1.2); }
 
+        /* Grid de Cards Arredondados */
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; }
         .card {
             background: var(--dark-card);
@@ -71,7 +74,10 @@
         }
 
         .full { grid-column: span 2; }
-        h3 { margin: 0 0 15px 0; font-size: 13px; text-transform: uppercase; color: #94A3B8; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        h3 { 
+            margin: 0 0 15px 0; font-size: 13px; text-transform: uppercase; 
+            color: #94A3B8; font-weight: 800; display: flex; align-items: center; gap: 10px; 
+        }
         h3::before { content: ""; width: 4px; height: 16px; background: var(--secondary); border-radius: 2px; }
 
         .chart-container { position: relative; height: 320px; width: 100%; }
@@ -80,6 +86,7 @@
         th { text-align: left; padding: 12px; background: rgba(255,255,255,0.05); color: #94A3B8; font-size: 11px; }
         td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
 
+        /* Estilo do Modal */
         #modalDetails {
             display: none;
             position: fixed;
@@ -130,7 +137,7 @@
     <div id="modalDetails">
         <div class="modal-content">
             <span style="float:right; cursor:pointer; color:var(--secondary); font-size:35px;" onclick="document.getElementById('modalDetails').style.display='none'">&times;</span>
-            <h2 id="modalTitle" style="color:var(--secondary); margin-top: 0;">Detalhamento de Registros</h2>
+            <h2 id="modalTitle" style="color:var(--secondary); margin-top: 0;">Detalhamento</h2>
             <div style="overflow-x: auto;">
                 <table id="drillTable">
                     <thead id="drillHeader"></thead>
@@ -141,16 +148,19 @@
     </div>
 
     <script>
-        Chart.register(ChartDataLabels);
+        // Aguarda carregar todas as bibliotecas antes de rodar o código
+        window.addEventListener('load', function() {
+            Chart.register(ChartDataLabels);
+            carregarDados();
+        });
+
         let charts = {};
         let rawData = [];
         const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTVryRwQY-TWkS34K9rnHn8M15UZhiHcYZFGR6r-vZ0TjQuWLsB-URinilNwVSDSA/pub?output=csv";
 
-        window.onload = carregarDados;
-
         function carregarDados() {
-            if (typeof Papa === "undefined") {
-                console.error("PapaParse não carregou!");
+            if (typeof Papa === 'undefined') {
+                setTimeout(carregarDados, 500); // Tenta novamente se o PapaParse não estiver pronto
                 return;
             }
             Papa.parse(SHEET_URL, {
@@ -175,7 +185,6 @@
         function extrairCidade(texto) {
             if (!texto) return "-";
             const partes = texto.split(',');
-            // Pega o último elemento após a vírgula (geralmente a cidade no seu padrão de dados)
             return partes.length > 1 ? partes[partes.length - 1].replace(/"/g, '').trim() : texto;
         }
 
@@ -245,7 +254,7 @@
             document.getElementById('modalDetails').style.display = 'block';
             document.getElementById('modalTitle').innerText = `Detalhamento: ${valor}`;
             
-            const cols = ['Cliente', 'Cidade', 'Material', 'Programado', 'Faturado', 'Saldo'];
+            const cols = ['Cliente', 'Cidade', 'Material', 'Prog', 'Fat', 'Saldo'];
             document.getElementById('drillHeader').innerHTML = `<tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr>`;
             
             document.getElementById('drillBody').innerHTML = filtered.map(row => `
@@ -261,7 +270,7 @@
         }
 
         function enviarEmail() {
-            window.location.href = `mailto:?subject=Dashboard Atualizado&body=Acesse: ${window.location.href}`;
+            window.location.href = `mailto:?subject=Dashboard Atualizado&body=Confira o relatório aqui: ${window.location.href}`;
         }
     </script>
 </body>
