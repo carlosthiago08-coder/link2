@@ -29,7 +29,6 @@
             color: var(--text-light);
         }
 
-        /* Cabeçalho Original */
         header {
             display: flex;
             justify-content: space-between;
@@ -56,7 +55,6 @@
             gap: 8px;
             transition: 0.3s;
             font-size: 14px;
-            text-decoration: none;
         }
 
         .btn-upload { background: var(--secondary); color: #000; }
@@ -64,7 +62,6 @@
         .btn-email { background: #F59E0B; color: #000; }
         .btn:hover { transform: translateY(-2px); filter: brightness(1.2); }
 
-        /* Grid de Cards Arredondados */
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; }
         .card {
             background: var(--dark-card);
@@ -74,10 +71,7 @@
         }
 
         .full { grid-column: span 2; }
-        h3 { 
-            margin: 0 0 15px 0; font-size: 13px; text-transform: uppercase; 
-            color: #94A3B8; font-weight: 800; display: flex; align-items: center; gap: 10px; 
-        }
+        h3 { margin: 0 0 15px 0; font-size: 13px; text-transform: uppercase; color: #94A3B8; font-weight: 800; display: flex; align-items: center; gap: 10px; }
         h3::before { content: ""; width: 4px; height: 16px; background: var(--secondary); border-radius: 2px; }
 
         .chart-container { position: relative; height: 320px; width: 100%; }
@@ -86,7 +80,6 @@
         th { text-align: left; padding: 12px; background: rgba(255,255,255,0.05); color: #94A3B8; font-size: 11px; }
         td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
 
-        /* Estilo do Modal */
         #modalDetails {
             display: none;
             position: fixed;
@@ -137,7 +130,7 @@
     <div id="modalDetails">
         <div class="modal-content">
             <span style="float:right; cursor:pointer; color:var(--secondary); font-size:35px;" onclick="document.getElementById('modalDetails').style.display='none'">&times;</span>
-            <h2 id="modalTitle" style="color:var(--secondary); margin-top: 0;">Detalhamento</h2>
+            <h2 id="modalTitle" style="color:var(--secondary); margin-top: 0;">Detalhamento de Registros</h2>
             <div style="overflow-x: auto;">
                 <table id="drillTable">
                     <thead id="drillHeader"></thead>
@@ -148,10 +141,15 @@
     </div>
 
     <script>
-        // Aguarda carregar todas as bibliotecas antes de rodar o código
+        // GARANTE QUE O SCRIPT SÓ RODA QUANDO TUDO ESTIVER PRONTO
         window.addEventListener('load', function() {
-            Chart.register(ChartDataLabels);
-            carregarDados();
+            if (typeof Papa !== 'undefined') {
+                Chart.register(ChartDataLabels);
+                carregarDados();
+            } else {
+                console.error("PapaParse não carregou. Tentando novamente em 1s...");
+                setTimeout(() => window.location.reload(), 1000);
+            }
         });
 
         let charts = {};
@@ -159,10 +157,6 @@
         const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTVryRwQY-TWkS34K9rnHn8M15UZhiHcYZFGR6r-vZ0TjQuWLsB-URinilNwVSDSA/pub?output=csv";
 
         function carregarDados() {
-            if (typeof Papa === 'undefined') {
-                setTimeout(carregarDados, 500); // Tenta novamente se o PapaParse não estiver pronto
-                return;
-            }
             Papa.parse(SHEET_URL, {
                 download: true, header: true, skipEmptyLines: true,
                 complete: (results) => {
@@ -203,32 +197,24 @@
                 const grouped = helperGroup(key);
                 const labels = Object.keys(grouped);
                 
-                const datasets = [
-                    { label: 'Programado', data: labels.map(l => grouped[l].p), backgroundColor: '#1E293B', borderColor: '#3B82F6', borderWidth: 1 },
-                    { label: 'Faturado', data: labels.map(l => grouped[l].f), backgroundColor: '#22C55E' }
-                ];
-
-                if(isHybrid) {
-                    datasets.push({
-                        label: 'Aderência %', type: 'line', borderColor: '#F59E0B', yAxisID: 'y1',
-                        data: labels.map(l => grouped[l].p > 0 ? ((grouped[l].f/grouped[l].p)*100).toFixed(1) : 0),
-                        datalabels: { align: 'top', formatter: v => v + '%' }
-                    });
-                }
-
                 charts[id] = new Chart(document.getElementById(id), {
                     type: 'bar',
-                    data: { labels, datasets },
+                    data: {
+                        labels,
+                        datasets: [
+                            { label: 'Programado', data: labels.map(l => grouped[l].p), backgroundColor: '#1E293B', borderColor: '#3B82F6', borderWidth: 1 },
+                            { label: 'Faturado', data: labels.map(l => grouped[l].f), backgroundColor: '#22C55E' }
+                        ]
+                    },
                     options: {
                         responsive: true, maintainAspectRatio: false,
                         onClick: (e, el) => { if (el.length > 0) showDrill(labels[el[0].index], key); },
                         plugins: { 
                             legend: { labels: { color: '#94A3B8' } },
-                            datalabels: { color: '#fff', font: { size: 10, weight: 'bold' }, formatter: v => v > 0 ? Math.round(v).toLocaleString() : '' }
+                            datalabels: { color: '#fff', font: { weight: 'bold' }, formatter: v => v > 0 ? Math.round(v).toLocaleString() : '' }
                         },
                         scales: {
                             y: { ticks: { color: '#94A3B8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                            y1: isHybrid ? { position: 'right', min: 0, max: 120, ticks: { color: '#F59E0B' } } : { display: false },
                             x: { ticks: { color: '#94A3B8' } }
                         }
                     }
@@ -237,7 +223,7 @@
 
             createChart('chartCli', 'Cliente');
             createChart('chartPla', 'Planta');
-            createChart('chartInc', 'Incoterm', true);
+            createChart('chartInc', 'Incoterm');
             createChart('chartGer', 'Gerente de Contas');
             createChart('chartMat', 'Material');
             
@@ -252,7 +238,7 @@
         function showDrill(valor, campo) {
             const filtered = rawData.filter(d => String(d[campo]) === String(valor));
             document.getElementById('modalDetails').style.display = 'block';
-            document.getElementById('modalTitle').innerText = `Detalhamento: ${valor}`;
+            document.getElementById('modalTitle').innerText = `Análise Detalhada: ${valor}`;
             
             const cols = ['Cliente', 'Cidade', 'Material', 'Prog', 'Fat', 'Saldo'];
             document.getElementById('drillHeader').innerHTML = `<tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr>`;
