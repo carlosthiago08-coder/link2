@@ -13,89 +13,30 @@
     
     <style>
         :root {
-            --primary: #064E3B;
-            --secondary: #22C55E;
-            --accent: #3B82F6;
-            --dark-card: #1E293B;
-            --bg: #0F172A;
-            --text-light: #F8FAFC;
+            --primary: #064E3B; --secondary: #22C55E; --accent: #3B82F6;
+            --dark-card: #1E293B; --bg: #0F172A; --text-light: #F8FAFC;
         }
-
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg);
-            margin: 0;
-            padding: 25px;
-            color: var(--text-light);
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: linear-gradient(135deg, #064E3B 0%, #065F46 100%);
-            padding: 20px 40px;
-            border-radius: 16px;
-            margin-bottom: 25px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); margin: 0; padding: 25px; color: var(--text-light); }
+        header { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #064E3B 0%, #065F46 100%); padding: 20px 40px; border-radius: 16px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         .logo h1 { margin: 0; font-size: 26px; font-weight: 800; }
         .logo span { color: var(--secondary); }
-
         .btn-group { display: flex; gap: 12px; }
-        .btn {
-            padding: 12px 24px;
-            border-radius: 10px;
-            border: none;
-            cursor: pointer;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: 0.3s;
-        }
-
+        .btn { padding: 12px 24px; border-radius: 10px; border: none; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 8px; transition: 0.3s; }
         .btn-upload { background: var(--secondary); color: #000; }
         .btn-export { background: var(--accent); color: white; }
-        .btn-email { background: #F59E0B; color: #000; }
         .btn:hover { transform: translateY(-2px); filter: brightness(1.2); }
-
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; }
-        .card {
-            background: var(--dark-card);
-            padding: 25px;
-            border-radius: 24px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-
+        .card { background: var(--dark-card); padding: 25px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
         .full { grid-column: span 2; }
         h3 { margin: 0 0 15px 0; font-size: 13px; text-transform: uppercase; color: #94A3B8; font-weight: 800; display: flex; align-items: center; gap: 10px; }
         h3::before { content: ""; width: 4px; height: 16px; background: var(--secondary); border-radius: 2px; }
-
         .chart-container { position: relative; height: 320px; width: 100%; }
-        
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { text-align: left; padding: 12px; background: rgba(255,255,255,0.05); color: #94A3B8; font-size: 11px; }
         td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
-
         input[type="file"] { display: none; }
-
-        #modalDetails {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.95);
-            z-index: 1000;
-            backdrop-filter: blur(10px);
-        }
-        .modal-content {
-            background: var(--dark-card);
-            width: 95%; margin: 20px auto;
-            padding: 30px; border-radius: 20px;
-            max-height: 90vh; overflow-y: auto;
-            border: 1px solid var(--secondary);
-        }
+        #modalDetails { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); z-index: 1000; backdrop-filter: blur(10px); }
+        .modal-content { background: var(--dark-card); width: 95%; margin: 20px auto; padding: 30px; border-radius: 20px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--secondary); }
     </style>
 </head>
 <body>
@@ -103,25 +44,22 @@
     <header>
         <div class="logo"><h1>CUSTOMER <span>DIGITAL</span></h1></div>
         <div class="btn-group">
-            <label for="excelFile" class="btn btn-upload">📁 Importar Local</label>
+            <label for="excelFile" class="btn btn-upload">📁 Atualizar Local</label>
             <input type="file" id="excelFile" accept=".xlsx, .xls, .csv">
-            <button class="btn btn-export" onclick="window.print()">📄 Gerar PDF</button>
-            <button class="btn btn-email" onclick="enviarEmail()">✉️ Enviar Relatório</button>
+            <button class="btn btn-export" onclick="window.print()">📄 Exportar PDF</button>
         </div>
     </header>
 
     <div class="grid">
-        <div class="card"><h3>1- Volume por Cliente (Prog vs Fat)</h3><div class="chart-container"><canvas id="chartCli"></canvas></div></div>
-        <div class="card"><h3>2- Volume por Planta (Prog vs Fat)</h3><div class="chart-container"><canvas id="chartPla"></canvas></div></div>
-        <div class="card"><h3>3- Visão por Incoterm (Prog vs Fat) e Aderência %</h3><div class="chart-container"><canvas id="chartInc"></canvas></div></div>
-        <div class="card"><h3>4- Volume por Gerente (Prog vs Fat)</h3><div class="chart-container"><canvas id="chartGer"></canvas></div></div>
-        <div class="card full"><h3>5- Volume por Material (Prog vs Fat)</h3><div class="chart-container"><canvas id="chartMat"></canvas></div></div>
+        <div class="card"><h3>1- Volume por Cliente</h3><div class="chart-container"><canvas id="chartCli"></canvas></div></div>
+        <div class="card"><h3>2- Volume por Planta</h3><div class="chart-container"><canvas id="chartPla"></canvas></div></div>
+        <div class="card"><h3>3- Aderência por Incoterm</h3><div class="chart-container"><canvas id="chartInc"></canvas></div></div>
+        <div class="card"><h3>4- Volume por Gerente</h3><div class="chart-container"><canvas id="chartGer"></canvas></div></div>
+        <div class="card full"><h3>5- Volume por Material</h3><div class="chart-container"><canvas id="chartMat"></canvas></div></div>
         <div class="card full">
-            <h3>6- Tabela de Aderência Detalhada</h3>
+            <h3>6- Tabela Detalhada de Aderência</h3>
             <table id="mainTable">
-                <thead>
-                    <tr><th>Categoria</th><th>Programado (Ton)</th><th>Faturado (Ton)</th><th>Saldo</th><th>Aderência %</th></tr>
-                </thead>
+                <thead><tr><th>Categoria</th><th>Programado</th><th>Faturado</th><th>Saldo</th><th>%</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -130,13 +68,8 @@
     <div id="modalDetails">
         <div class="modal-content">
             <span style="float:right; cursor:pointer; color:var(--secondary); font-size:30px;" onclick="document.getElementById('modalDetails').style.display='none'">&times;</span>
-            <h2 id="modalTitle" style="color:var(--secondary); margin-top: 0;">Detalhamento de Registros</h2>
-            <div id="modalBody" style="overflow-x: auto;">
-                <table id="drillTable">
-                    <thead id="drillHeader"></thead>
-                    <tbody id="drillBody"></tbody>
-                </table>
-           </div>
+            <h2 id="modalTitle" style="color:var(--secondary); margin-top: 0;">Detalhamento</h2>
+            <div id="modalBody" style="overflow-x: auto;"><table id="drillTable"><thead id="drillHeader"></thead><tbody id="drillBody"></tbody></table></div>
         </div>
     </div>
 
@@ -144,14 +77,13 @@
         Chart.register(ChartDataLabels);
         let charts = {};
         let rawData = [];
+        
+        // LINK CORRIGIDO PARA EVITAR ERRO DE CORS
         const GOOGLE_SHEETS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTVryRwQY-TWkS34K9rnHn8M15UZhiHcYZFGR6r-vZ0TjQuWLsB-URinilNwVSDSA/pub?output=csv";
 
-        // Carregar automaticamente ao abrir (Github Pages)
-        window.onload = function() {
-            carregarDadosGoogle();
-        };
+        window.onload = carregarDados;
 
-        function carregarDadosGoogle() {
+        function carregarDados() {
             Papa.parse(GOOGLE_SHEETS_URL, {
                 download: true,
                 header: true,
@@ -159,17 +91,16 @@
                 complete: function(results) {
                     rawData = results.data;
                     processDashboard(rawData);
-                }
+                },
+                error: function(err) { console.error("Erro ao carregar Google Sheets:", err); }
             });
         }
 
         document.getElementById('excelFile').addEventListener('change', function(e) {
             const file = e.target.files[0];
-            if (!file) return;
             const reader = new FileReader();
             reader.onload = function(evt) {
-                const data = evt.target.result;
-                const workbook = XLSX.read(data, { type: 'binary' });
+                const workbook = XLSX.read(evt.target.result, { type: 'binary' });
                 rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
                 processDashboard(rawData);
             };
@@ -179,7 +110,7 @@
         function extrairCidade(texto) {
             if (!texto) return "N/D";
             const partes = texto.split(',');
-            return partes[partes.length - 1].replace(/"/g, '').trim();
+            return partes.length > 1 ? partes[partes.length - 1].replace(/"/g, '').trim() : "N/D";
         }
 
         function processDashboard(data) {
@@ -188,7 +119,8 @@
             const helperGroup = (key) => data.reduce((acc, curr) => {
                 const label = curr[key] || "N/D";
                 if (!acc[label]) acc[label] = { p: 0, f: 0 };
-                acc[label].p += parseFloat(curr.Programado || 0);
+                // Soma Programado e Faturado (Tratando números vindo do Excel)
+                acc[label].p += parseFloat(curr.Programado || curr.Programado2 || 0);
                 acc[label].f += parseFloat(curr.Faturado || 0);
                 return acc;
             }, {});
@@ -197,15 +129,15 @@
                 const grouped = helperGroup(key);
                 const labels = Object.keys(grouped);
                 const datasets = [
-                    { label: 'Programado', data: labels.map(l => grouped[l].p), backgroundColor: '#1E293B', borderColor: '#3B82F6', borderWidth: 1, yAxisID: 'y' },
-                    { label: 'Faturado', data: labels.map(l => grouped[l].f), backgroundColor: '#22C55E', yAxisID: 'y' }
+                    { label: 'Programado', data: labels.map(l => grouped[l].p), backgroundColor: '#1E293B', borderColor: '#3B82F6', borderWidth: 1 },
+                    { label: 'Faturado', data: labels.map(l => grouped[l].f), backgroundColor: '#22C55E' }
                 ];
 
                 if(isHybrid) {
                     datasets.push({
-                        label: 'Aderência %', type: 'line', borderColor: '#F59E0B', yAxisID: 'y1',
+                        label: 'Aderência %', type: 'line', borderColor: '#F59E0B',
                         data: labels.map(l => grouped[l].p > 0 ? ((grouped[l].f/grouped[l].p)*100).toFixed(1) : 0),
-                        datalabels: { align: 'top', formatter: v => v + '%' }
+                        yAxisID: 'y1', datalabels: { display: true, align: 'top' }
                     });
                 }
 
@@ -213,22 +145,12 @@
                     type: 'bar',
                     data: { labels, datasets },
                     options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        onClick: (e, el) => {
-                            if (el.length > 0) {
-                                const index = el[0].index;
-                                abrirDrillDown(labels[index], key);
-                            }
-                        },
-                        plugins: { 
-                            legend: { labels: { color: '#94A3B8' } },
-                            datalabels: { color: '#fff', font: { size: 9 }, formatter: v => v > 0 ? Math.round(v) : '' }
-                        },
-                        scales: {
-                            y: { ticks: { color: '#94A3B8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                            y1: isHybrid ? { position: 'right', min: 0, max: 120, ticks: { color: '#F59E0B' }, grid: { display: false } } : { display: false },
-                            x: { ticks: { color: '#94A3B8' } }
+                        responsive: true, maintainAspectRatio: false,
+                        onClick: (e, el) => { if(el.length > 0) abrirDrillDown(labels[el[0].index], key); },
+                        plugins: { legend: { labels: { color: '#94A3B8' } }, datalabels: { color: '#fff', font: { size: 10 } } },
+                        scales: { 
+                            y: { ticks: { color: '#94A3B8' } },
+                            y1: isHybrid ? { position: 'right', min: 0, max: 120, display: true } : { display: false }
                         }
                     }
                 });
@@ -246,21 +168,16 @@
             const filtered = rawData.filter(d => String(d[campo]) === String(valor));
             document.getElementById('modalDetails').style.display = 'block';
             document.getElementById('modalTitle').innerText = `Detalhamento: ${valor}`;
-            
-            const cols = ['Cliente', 'Cidade', 'Nome do Cooperado', 'Contrato', 'OV', 'Material', 'Programado', 'Agendado', 'Faturado'];
+            const cols = ['Cliente', 'Cidade', 'Material', 'Programado', 'Faturado', 'Saldo'];
             document.getElementById('drillHeader').innerHTML = `<tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr>`;
-            
             document.getElementById('drillBody').innerHTML = filtered.map(row => `
                 <tr>
                     <td>${row['Cliente'] || '-'}</td>
                     <td style="color:var(--secondary); font-weight:800;">${extrairCidade(row['Recebedor'])}</td>
-                    <td>${row['Nome do Cooperado'] || '-'}</td>
-                    <td>${row['Contrato'] || '-'}</td>
-                    <td>${row['OV'] || '-'}</td>
                     <td>${row['Material'] || '-'}</td>
                     <td>${parseFloat(row['Programado'] || 0).toLocaleString()}</td>
-                    <td style="font-weight: bold; color: #F59E0B;">${parseFloat(row['Agendado'] || 0).toLocaleString()}</td>
                     <td>${parseFloat(row['Faturado'] || 0).toLocaleString()}</td>
+                    <td>${(parseFloat(row['Programado'] || 0) - parseFloat(row['Faturado'] || 0)).toLocaleString()}</td>
                 </tr>
             `).join('');
         }
@@ -269,14 +186,8 @@
             const tbody = document.querySelector('#mainTable tbody');
             tbody.innerHTML = Object.entries(data).map(([name, val]) => {
                 const adr = val.p > 0 ? ((val.f/val.p)*100).toFixed(1) : 0;
-                return `<tr><td>${name}</td><td>${val.p.toLocaleString()}</td><td>${val.f.toLocaleString()}</td><td style="color:${(val.p-val.f)>0?'#FCA5A5':'#86EFAC'}">${(val.p-val.f).toLocaleString()}</td><td><b>${adr}%</b></td></tr>`;
+                return `<tr><td>${name}</td><td>${val.p.toLocaleString()}</td><td>${val.f.toLocaleString()}</td><td>${(val.p-val.f).toLocaleString()}</td><td><b>${adr}%</b></td></tr>`;
             }).join('');
-        }
-
-        function enviarEmail() {
-            const assunto = encodeURIComponent("Relatório Operacional - Dashboard");
-            const corpo = encodeURIComponent("Link do Dashboard: " + window.location.href);
-            window.location.href = `mailto:?subject=${assunto}&body=${corpo}`;
         }
     </script>
 </body>
