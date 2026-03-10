@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CUSTOMER DIGITAL | Dashboard Real-Time</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #064E3B; --secondary: #22C55E; --accent: #3B82F6;
+            --dark-card: #1E293B; --bg: #0F172A; --text-light: #F8FAFC;
+        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: var(--text-light); }
+        
+        /* Alerta de Erro */
+        #error-banner { display: none; background: #7f1d1d; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; border: 1px solid #f87171; }
+
+        header { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #064E3B 0%, #065F46 100%); padding: 15px 30px; border-radius: 12px; margin-bottom: 20px; }
+        .logo h1 { margin: 0; font-size: 22px; }
+        .logo span { color: var(--secondary); }
+        
+        .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; transition: 0.3s; background: var(--secondary); color: #000; text-decoration: none; display: inline-block; }
+        .btn:hover { transform: translateY(-2px); opacity: 0.9; }
+
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .card { background: var(--dark-card); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); }
+        .full { grid-column: span 2; }
+        
+        .chart-container { position: relative; height: 300px; width: 100%; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+        th { text-align: left; padding: 10px; background: rgba(255,255,255,0.05); color: #94A3B8; }
+        td { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+        #modalDetails { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; backdrop-filter: blur(5px); }
+        .modal-content { background: var(--dark-card); width: 90%; margin: 5vh auto; padding: 20px; border-radius: 12px; max-height: 85vh; overflow-y: auto; }
+    </style>
+</head>
+<body>
+
+    <div id="error-banner">⚠️ Erro ao carregar dados do Google Sheets. Verifique se a planilha está "Publicada na Web" como CSV.</div>
+
+    <header>
+        <div class="logo"><h1>CUSTOMER <span>DIGITAL</span></h1></div>
+        <div class="btn-group">
+            <label for="excelFile" class="btn">📁 Importar Manual</label>
+            <input type="file" id="excelFile" style="display:none" accept=".xlsx, .xls, .csv">
+        </div>
+    </header>
+
+    <div class="grid">
+        <div class="card"><h3>Volume por Cliente</h3><div class="chart-container"><canvas id="chartCli"></canvas></div></div>
+        <div class="card"><h3>Volume por Planta</h3><div class="chart-container"><canvas id="chartPla"></canvas></div></div>
+        <div class="card full"><h3>Volume por Material</h3><div class="chart-container"><canvas id="chartMat"></canvas></div></div>
+        <div class="card full">
+            <h3>Tabela de Aderência</h3>
+            <table id="mainTable">
+                <thead><tr><th>Categoria</th><th>Programado</th><th>Faturado</th><th>Saldo</th><th>%</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="modalDetails">
+        <div class="modal-content">
+            <button class="btn" style="float:right" onclick="document.getElementById('modalDetails').style.display='none'">Fechar</button>
+            <h2 id="modalTitle" style="color:var(--secondary)">Detalhamento</h2>
+            <div style="overflow-x: auto;"><table id="drillTable"><thead id="drillHeader"></thead><tbody id="drillBody"></tbody></table></div>
+        </div>
+    </div>
+
+    <script>
+        Chart.register(ChartDataLabels);
+        let charts = {};
+        let rawData = [];
+        
+        // URL PUBLICA DO GOOGLE SHEETS (CSV)
+        const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTVryRwQY-TWkS34K9rnHn8M15UZhiHcYZFGR6r-vZ0TjQuWLsB-URinilNwVSDSA/pub?output=csv";
+
+        window.onload = () => {
+            Papa.parse(SHEET_URL, {
+                download: true, header: true, skipEmptyLines: true,
+                complete: (results) => {
+                    rawData = results.data;
+                    processDashboard(rawData);
+                },
+                error: () => { document.getElementById('error-banner').style.display = 'block'; }
+            });
+        };
+
+        document.getElementById('excelFile').onchange = (e) => {
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const wb = XLSX.read(evt.target.result, {type:'binary'});
+                rawData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+                processDashboard(rawData);
+            };
+            reader.readAsBinaryString(e.target.files[0]);
+        };
+
+        function extrairCidade(t) {
+            if(!t) return "-";
+            const p = t.split(',');
+            return p.length > 1 ? p[p.length-1].replace(/"/g, '').trim() : t;
+        }
+
+        function processDashboard(data) {
+            Object.values(charts).forEach(c => c.destroy());
+            const group = (k) => data.reduce((a, c) => {
+                const l = c[k] || "N/D";
+                if(!a[l]) a[l] = {p:0, f:0};
+                a[l].p += parseFloat(c.Programado || c.Programado2 || 0);
+                a[l].f += parseFloat(c.Faturado || 0);
+                return a;
+            }, {});
+
+            const mkChart = (id, k) => {
+                const g = group(k);
+                const labels = Object.keys(g);
+                charts[id] = new Chart(document.getElementById(id), {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [
+                            { label: 'Prog', data: labels.map(l=>g[l].p), backgroundColor: '#1E293B' },
+                            { label: 'Fat', data: labels.map(l=>g[l].f), backgroundColor: '#22C55E' }
+                        ]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        onClick: (e, el) => { if(el.length) showDrill(labels[el[0].index], k); },
+                        plugins: { datalabels: { color: '#fff', font: {size: 10} } }
+                    }
+                });
+            };
+
+            mkChart('chartCli', 'Cliente');
+            mkChart('chartPla', 'Planta');
+            mkChart('chartMat', 'Material');
+            
+            const tb = document.querySelector('#mainTable tbody');
+            const cliData = group('Cliente');
+            tb.innerHTML = Object.entries(cliData).map(([n, v]) => `
+                <tr><td>${n}</td><td>${v.p.toLocaleString()}</td><td>${v.f.toLocaleString()}</td><td>${(v.p-v.f).toLocaleString()}</td><td>${v.p>0?((v.f/v.p)*100).toFixed(1):0}%</td></tr>
+            `).join('');
+        }
+
+        function showDrill(v, k) {
+            const f = rawData.filter(d => String(d[k]) === String(v));
+            document.getElementById('modalDetails').style.display = 'block';
+            document.getElementById('modalTitle').innerText = v;
+            const h = ['Cliente', 'Cidade', 'Material', 'Prog', 'Fat'];
+            document.getElementById('drillHeader').innerHTML = `<tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr>`;
+            document.getElementById('drillBody').innerHTML = f.map(r => `
+                <tr>
+                    <td>${r.Cliente}</td>
+                    <td style="color:var(--secondary);font-weight:bold">${extrairCidade(r.Recebedor)}</td>
+                    <td>${r.Material}</td>
+                    <td>${parseFloat(r.Programado||0).toLocaleString()}</td>
+                    <td>${parseFloat(r.Faturado||0).toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
